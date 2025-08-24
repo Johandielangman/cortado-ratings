@@ -88,7 +88,7 @@ def get_ratings_data():
         return pd.DataFrame()
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=300)
 def get_statistics(df):
     if df.empty:
         return {
@@ -112,6 +112,13 @@ def get_statistics(df):
         'average_price': price_non_na.mean() if not price_non_na.empty else 0,
         'total_spent': price_non_na.sum() if not price_non_na.empty else 0
     }
+
+
+def clear_and_rerun():
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    st.rerun()
+
 
 # =============== // VISUALIZATION FUNCTIONS // ===============
 
@@ -311,8 +318,8 @@ def main():
 
             # Data manipulation
             filtered_df['stars_display'] = filtered_df['stars'].apply(lambda x: "⭐" * int(x) if pd.notnull(x) else "")
-            filtered_df['cookie'] = filtered_df['cookie'].apply(lambda x: "🍪"  if x else "❌")
-            filtered_df['take_away'] = filtered_df['take_away'].apply(lambda x: "🥤"  if x else "❌")
+            filtered_df['cookie'] = filtered_df['cookie'].apply(lambda x: "🍪" if x else "❌")
+            filtered_df['take_away'] = filtered_df['take_away'].apply(lambda x: "🥤" if x else "❌")
 
             filtered_df['price_zar'] = filtered_df['price_zar'].fillna("💸")
             filtered_df['notes'] = filtered_df['notes'].fillna("📝 No Comment")
@@ -347,6 +354,8 @@ def main():
         f"Data refreshes every 30 seconds | "
         f"{os.getenv('K_REVISION', '')}"
     )
+    if st.button("🔄 Clear Cache & Refresh Data", type="secondary"):
+        clear_and_rerun()
 
 
 if __name__ == "__main__":
