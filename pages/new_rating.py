@@ -145,7 +145,8 @@ if manually_enter_selected:
                 step=0.1,
                 help="Optional - Google's rating for this place"
             )
-        if st.form_submit_button("📍 Save Location Details"):
+        submitted = st.form_submit_button("📍 Save Location Details")
+        if submitted:
             if restaurant_name.strip():
                 st.session_state.form_data["restaurant"].update({
                     "name": restaurant_name,
