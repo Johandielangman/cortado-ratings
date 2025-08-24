@@ -35,4 +35,6 @@ class Rating:
     stars: int
     price_zar: float
     notes: str | None = field(default=None)
+    num_shots: str | None = field(default=None)
     cookie: bool = field(default=False)
+    take_away: bool = field(default=False)

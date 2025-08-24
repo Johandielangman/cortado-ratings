@@ -8,21 +8,11 @@
 #
 # ~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~
 
-# =============== // LIBRARY IMPORT // ===============
-
-import streamlit as st
-
 # =============== // MODULE IMPORT // ===============
 
 from cortado.db_utils import CortadoDB
 import cortado.datastructures as DS
 import cortado.input_dc as DC
-
-
-@st.cache_resource
-def get_cortado_instance():
-    """Get a cached instance of the Cortado class."""
-    return Cortado()
 
 
 class Cortado:
@@ -69,6 +59,8 @@ class Cortado:
                     price_zar=rating.price_zar,
                     notes=rating.notes,
                     cookie=rating.cookie,
+                    take_away=rating.take_away,
+                    num_shots=rating.num_shots,
                     restaurant_id=db_restaurant.id,
                     user_id=db_user.id
                 )

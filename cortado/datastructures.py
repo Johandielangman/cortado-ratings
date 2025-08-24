@@ -69,10 +69,12 @@ class Rating(TimeStampedModel):
     # Rating data
     stars: Mapped[int] = mapped_column(Integer, nullable=False)
     price_zar: Mapped[float] = mapped_column(Numeric(precision=8, scale=2), nullable=True)
+    num_shots: Mapped[str] = mapped_column(String(50), nullable=True)  # e.g., single, double
     notes: Mapped[str] = mapped_column(Text, nullable=True)
 
     # Optional interesting fields
     cookie: Mapped[bool] = mapped_column(Boolean, default=False)
+    take_away: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="ratings")
