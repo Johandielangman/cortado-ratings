@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Place Autocomplete Example</title>
+    <meta charset="utf-8">
+    <style>
+        #autocomplete {
+            width: 100%;
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        #autocomplete:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+        
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .success-message {
+            color: green;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <input id="autocomplete" placeholder="Enter a location..." />
+    <div id="status"></div>
+    
+    <script>
+        let autocomplete;
+        let statusDiv = document.getElementById('status');
+        
+        function showStatus(message, isError = false) {
+            statusDiv.innerHTML = message;
+            statusDiv.className = isError ? 'error-message' : 'success-message';
+        }
+
+        function initAutocomplete() {
+            try {
+                // Check if Google Maps API is loaded
+                if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+                    showStatus('Google Maps API failed to load. Please check your API key and internet connection.', true);
+                    return;
+                }
+                
+                autocomplete = new google.maps.places.Autocomplete(
+                    document.getElementById('autocomplete'),
+                    {
+                        types: ['establishment', 'geocode'], // Include businesses and addresses
+                        fields: ['place_id', 'geometry', 'name', 'formatted_address', 'website', 'rating']
+                    }
+                );
+
+                autocomplete.addListener('place_changed', function () {
+                    var place = autocomplete.getPlace();
+                    
+                    if (!place.geometry) {
+                        showStatus('No details available for: ' + (place.name || 'selected location'), true);
+                        return;
+                    }
+                    
+                    var latitude = place.geometry.location.lat();
+                    var longitude = place.geometry.location.lng();
+                    var placeName = place.name || place.formatted_address || 'Unknown Location';
+                    var formattedAddress = place.formatted_address || 'Address not available';
+                    var placeId = place.place_id || 'ID not available';
+                    var website = place.website || "N/A"
+                    var rating = place.rating || "N/A"
+                    
+                    showStatus(`Selected: ${placeName} (${latitude.toFixed(6)}, ${longitude.toFixed(6)})`);
+
+                    // Prepare data object with all required fields
+                    var locationData = {
+                        place_name: placeName,
+                        formatted_address: formattedAddress,
+                        place_id: placeId,
+                        latitude: latitude,
+                        longitude: longitude,
+                        website: website,
+                        rating: rating
+                    };
+
+                    console.log('Sending data to Python:', locationData);
+                    sendDataToPython(locationData);
+                });
+                
+                showStatus('Autocomplete initialized successfully! Start typing to search for places.');
+                
+            } catch (error) {
+                showStatus('Error initializing autocomplete: ' + error.message, true);
+                console.error('Autocomplete initialization error:', error);
+            }
+        }
+
+        function sendDataToPython(data) {
+            // Serialize the data as a JSON string for Python to deserialize
+            sendMessageToStreamlitClient("streamlit:setComponentValue", { value: data });
+        }
+
+        // Streamlit component functions
+        function sendMessageToStreamlitClient(type, data) {
+            var outData = Object.assign({
+                isStreamlitMessage: true,
+                type: type,
+            }, data);
+            window.parent.postMessage(outData, "*");
+        }
+
+        function init() {
+            sendMessageToStreamlitClient("streamlit:componentReady", { apiVersion: 1 });
+        }
+
+        function setFrameHeight(height) {
+            sendMessageToStreamlitClient("streamlit:setFrameHeight", { height: height });
+        }
+
+        // Hook things up!
+        window.addEventListener("message", function (event) {
+            if (event.data.type !== "streamlit:render") return;
+            // Access values sent from Python here!
+            const args = event.data.args;
+            if (args && args.api_key) {
+                // Dynamically load Google Maps with the API key
+                loadGoogleMapsAPI(args.api_key);
+            }
+        });
+
+        function loadGoogleMapsAPI(apiKey) {
+            // Remove existing script if any
+            const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+            if (existingScript) {
+                existingScript.remove();
+            }
+            
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initAutocomplete`;
+            script.async = true;
+            script.defer = true;
+            script.onerror = function() {
+                showStatus('Failed to load Google Maps API. Please check your API key and internet connection.', true);
+            };
+            document.head.appendChild(script);
+        }
+
+        init();
+
+        // Set frame height
+        window.addEventListener("load", function () {
+            window.setTimeout(function () {
+                setFrameHeight(document.documentElement.clientHeight)
+            }, 0);
+        });
+        setFrameHeight(120); // Increased height to accommodate status messages
+    </script>
+</body>
+</html>
