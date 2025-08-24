@@ -97,8 +97,7 @@ try:
         })
 except Exception as e:
     st.error(f"❌ Google Maps API error: {str(e)}")
-    st.info("💡 Toggle off 'Use Google Maps API' to enter location details manually")
-    use_google_api = False
+    st.info("💡 Try to enter the data in manually")
 
 
 with st.form("manual_location_form"):
@@ -153,11 +152,11 @@ with st.form("manual_location_form"):
         if restaurant_name.strip():
             st.session_state.form_data["restaurant"].update({
                 "name": restaurant_name,
-                "address": address if address.strip() else None,
-                "google_place_id": google_place_id if google_place_id.strip() else None,
+                "address": address.strip() if address else None,
+                "google_place_id": google_place_id.strip() if google_place_id else None,
                 "latitude": latitude if latitude != 0.0 else None,
                 "longitude": longitude if longitude != 0.0 else None,
-                "website": website if website.strip() else None,
+                "website": website.strip() if website else None,
                 "restaurant_rating": google_rating if google_rating > 0.0 else None
             })
             st.success(f"✅ Location details saved for '{restaurant_name}'")
