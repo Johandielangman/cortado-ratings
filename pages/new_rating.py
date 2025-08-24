@@ -30,10 +30,10 @@ def get_cortado_instance():
 
 st.set_page_config(
     page_title="New Rating",
-    page_icon="✨"
+    page_icon="🎉"
 )
 
-st.title("New Rating ✨")
+st.title("New Rating 🎉")
 
 with st.spinner("Setting up the DB connection..."):
     cortado_instance = get_cortado_instance()
@@ -190,13 +190,14 @@ if st.session_state.form_data["restaurant"]["name"]:
             price_zar = st.number_input(
                 "Price (ZAR)*",
                 min_value=0.0,
-                value=st.session_state.form_data["rating"]["price_zar"],
+                value=None,
+                placeholder=0.0,
                 step=0.50,
                 format="%.2f",
                 help="Price of the cortado in South African Rand"
             )
         with col2:
-            num_shorts = st.selectbox(
+            num_shots = st.selectbox(
                 "Number of espresso shots",
                 options=[None, "single", "double"],
                 index=st.session_state.form_data["rating"]["num_shots"],
@@ -230,7 +231,10 @@ if st.session_state.form_data["restaurant"]["name"]:
         if submitted:
             if not user_name.strip():
                 st.error("❌ Please enter your name")
-            elif price_zar <= 0:
+            elif (
+                price_zar and
+                price_zar <= 0
+            ):
                 st.error("❌ Please enter a valid price")
             else:
                 with st.spinner("Submitting your rating..."):
@@ -253,7 +257,8 @@ if st.session_state.form_data["restaurant"]["name"]:
                             price_zar=price_zar,
                             notes=notes.strip() if notes.strip() else None,
                             cookie=cookie,
-                            take_away=st.session_state.form_data["rating"]["take_away"]
+                            take_away=take_away,
+                            num_shots=num_shots
                         )
                         cortado_instance.new_rating(
                             restaurant=restaurant,

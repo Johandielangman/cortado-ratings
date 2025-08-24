@@ -95,19 +95,22 @@ def get_statistics(df):
             'total_ratings': 0,
             'average_rating': 0,
             'total_cookies': 0,
+            'total_take_always': 0,
             'unique_restaurants': 0,
             'unique_users': 0,
             'average_price': 0,
             'total_spent': 0
         }
+    price_non_na = df['price_zar'].dropna()
     return {
         'total_ratings': len(df),
         'average_rating': df['stars'].mean(),
-        'total_cookies': df['cookie'].sum(),
+        'total_cookies': int(df['cookie'].sum()),
+        'total_take_always': int(df['take_away'].sum()),
         'unique_restaurants': df['restaurant_name'].nunique(),
         'unique_users': df['user_name'].nunique(),
-        'average_price': df['price_zar'].mean() if df['price_zar'].notna().any() else 0,
-        'total_spent': df['price_zar'].sum() if df['price_zar'].notna().any() else 0
+        'average_price': price_non_na.mean() if not price_non_na.empty else 0,
+        'total_spent': price_non_na.sum() if not price_non_na.empty else 0
     }
 
 # =============== // VISUALIZATION FUNCTIONS // ===============
@@ -162,9 +165,9 @@ def create_map_view(df):
     }).reset_index()
 
     for _, row in restaurant_data.iterrows():
-        if row['stars'] >= 4.5:
+        if row['stars'] >= 4:
             color = 'green'
-        elif row['stars'] >= 3.5:
+        elif row['stars'] >= 2:
             color = 'orange'
         else:
             color = 'red'
@@ -193,7 +196,7 @@ def quick_stats_view(stats):
     with col1:
         st.metric(
             label="Total Ratings",
-            value=f"{stats['total_ratings']:,}",
+            value=f"{stats['total_ratings']:,} ☕",
             delta=None
         )
     with col2:
@@ -204,33 +207,33 @@ def quick_stats_view(stats):
         )
     with col3:
         st.metric(
-            label="Total Cookies",
-            value=f"{stats['total_cookies']}🍪",
+            label="Total Take Aways",
+            value=f"{stats['total_take_always']:,} 🥤",
             delta=None
         )
     with col4:
         st.metric(
             label="Unique Restaurants",
-            value=stats['unique_restaurants'],
+            value=f"{stats['unique_restaurants']:,} 🏠",
             delta=None
         )
     with col5:
         st.metric(
             label="Average Price",
-            value=f"R{stats['average_price']:.0f}" if stats['average_price'] > 0 else "N/A",
+            value=f"R {stats['average_price']:.0f}" if stats['average_price'] > 0 else "N/A",
             delta=None
         )
     with col6:
         st.metric(
             label="Total Spent",
-            value=f"R{stats['total_spent']:.0f}" if stats['total_spent'] > 0 else "N/A",
+            value=f"R {stats['total_spent']:.0f}" if stats['total_spent'] > 0 else "N/A",
             delta=None
         )
     st.markdown("---")
 
 
 def main():
-    st.title("☕ Cortado Ratings Dashboard")
+    st.title("☕ Cortado Ratings")
     st.markdown("---")
     with st.spinner("Loading delicious data... ☕"):
         df = get_ratings_data()
@@ -306,12 +309,35 @@ def main():
             if show_take_away_only:
                 filtered_df = filtered_df.loc[filtered_df['take_away'] == True]  # noqa: E712
 
+            # Data manipulation
+            filtered_df['stars_display'] = filtered_df['stars'].apply(lambda x: "⭐" * int(x) if pd.notnull(x) else "")
+            filtered_df['cookie'] = filtered_df['cookie'].apply(lambda x: "🍪"  if x else "❌")
+            filtered_df['take_away'] = filtered_df['take_away'].apply(lambda x: "🥤"  if x else "❌")
+
+            filtered_df['price_zar'] = filtered_df['price_zar'].fillna("💸")
+            filtered_df['notes'] = filtered_df['notes'].fillna("📝 No Comment")
+            filtered_df['num_shots'] = filtered_df['num_shots'].fillna("❌")
+
             # Display filtered data
+            display_df = filtered_df[[
+                'created_at', 'restaurant_name', 'stars_display', 'num_shots', 'price_zar',
+                'cookie', 'take_away', 'notes', 'user_name'
+            ]].sort_values('created_at', ascending=False)
+
+            display_df = display_df.rename(columns={
+                'created_at': 'Date',
+                'restaurant_name': 'Restaurant',
+                'stars_display': 'Rating (out of 5 ⭐)',
+                'num_shots': 'Number of Shots',
+                'price_zar': 'Price (ZAR)',
+                'cookie': 'Cookie?',
+                'take_away': 'Take Away?',
+                'notes': 'Notes',
+                'user_name': 'User'
+            })
+
             st.dataframe(
-                filtered_df[[
-                    'created_at', 'restaurant_name', 'stars', 'num_shots', 'price_zar',
-                    'cookie', 'take_away', 'notes', 'user_name'
-                ]].sort_values('created_at', ascending=False),
+                display_df,
                 use_container_width=True,
                 hide_index=True
             )
