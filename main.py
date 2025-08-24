@@ -88,7 +88,7 @@ def get_ratings_data():
         return pd.DataFrame()
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl="300s")
 def get_statistics(df):
     if df.empty:
         return {
